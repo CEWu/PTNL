@@ -194,10 +194,6 @@ def select_top_k_similarity_per_class_with_noisy_label(outputs, img_paths, K=1, 
     # noisy lebels - split data into TP and FP sets
 
     for id in tqdm(list(set(ids.tolist()))): # 标签去重
-        index = np.where(ids==id)
-        conf_class = output_m_max[index] # 置信度
-        output_class = output_ori[index]
-        img_paths_class = img_paths[index] # 每个类别的路径
         gt_class_img_index = []
         for img in list(gt_class_label_dict[id]):
             gt_class_img_index.append(img_paths_dict[img])
@@ -210,7 +206,7 @@ def select_top_k_similarity_per_class_with_noisy_label(outputs, img_paths, K=1, 
         output_class = output_ori[gt_class_img_index]
         img_paths_class = img_paths[gt_class_img_index] # 每个类别的路径
         if image_features is not None:
-            img_features = image_features[index]
+            img_features = image_features[gt_class_img_index]
             # caculate_pairwise_distance(img_features[:K])
             if K >= 0:
                 for img_path, img_feature, conf, logit in zip(img_paths_class[:K], img_features[:K], conf_class[:K], output_class):
