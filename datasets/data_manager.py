@@ -141,7 +141,7 @@ class UPLDataManager(DataManager):
         except:
             pass
 
-    def update_ssdateloader(self, predict_label_dict, predict_conf_dict):
+    def update_ssdateloader(self, predict_label_dict):
         """update the train_loader_sstrain to add labels
 
         Args:

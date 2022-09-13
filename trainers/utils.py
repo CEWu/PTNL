@@ -11,7 +11,6 @@ import random
 import time
 import math
 
-
 def plotLogitsMap(outputs, label, save_path, fig_title, max_lines=1000):
     fig, ax = plt.subplots(figsize=(5, 200))
     Softmax = torch.nn.Softmax(dim=1)
@@ -145,80 +144,50 @@ def select_top_k_similarity_per_class(outputs, img_paths, K=1, image_features=No
                     predict_conf_dict[img_path] = conf
     return predict_label_dict, predict_conf_dict
 
-def select_top_k_similarity_per_class_with_noisy_label(outputs, img_paths, K=1, image_features=None, is_softmax=True, random_seed=1, gt_label_dict=None, num_fp=0):
-    # print(outputs.shape)
-    if is_softmax:
-        outputs = torch.nn.Softmax(dim=1)(outputs)
-    output_m = outputs.cpu().detach().numpy()
-    output_ori = outputs.cpu().detach()
-    output_m_max = output_m.max(axis=1)
-    output_m_max_id = np.argsort(-output_m_max)
-    output_m = output_m[output_m_max_id]
-    img_paths = img_paths[output_m_max_id]
-    output_m_max = output_m_max[output_m_max_id]
-    output_ori = output_ori[output_m_max_id]
-    ids = (-output_m).argsort()[:, 0] # 获得每行的类别标签
-    gt_class_label_dict = {}
-    for indx in range(outputs.size(1)):
-        gt_class_label_dict[indx] = np.array([])
-    for ip, gt_label in gt_label_dict.items():
-        gt_class_label_dict[gt_label] = np.append(gt_class_label_dict[gt_label], np.array(ip))
-        # np.array(gt_class_label_dict[gt_label.item()], (np.array(ip)))
-    img_paths_dict = {k: v for v, k in enumerate(img_paths)}
-    if image_features is not None:
-        image_features = image_features.cpu().detach()
-        image_features = image_features[output_m_max_id]
+def select_top_k_similarity_per_class_with_noisy_label(img_paths, K=1, random_seed=1, gt_label_dict=None, num_fp=0):
+    if gt_label_dict is not None:
+        ids = gt_label_dict.values()
+        num_class = len(set(ids))
+        gt_class_label_dict = {}
+        for indx in range(num_class):
+            gt_class_label_dict[indx] = np.array([])
+        for ip, gt_label in gt_label_dict.items():
+            gt_class_label_dict[gt_label] = np.append(gt_class_label_dict[gt_label], np.array(ip))
+            # np.array(gt_class_label_dict[gt_label.item()], (np.array(ip)))
+        img_paths_dict = {k: v for v, k in enumerate(img_paths)}
 
-    predict_label_dict = {}
-    predict_conf_dict = {}
-    predict_logit_dict = {}
-    rng = np.random.default_rng(seed=random_seed)
-    acc_rate_dict = {}
-    from tqdm import tqdm
-    # noisy lebels - split data into TP and FP sets
-    tp_gt_all_img_index_dict = {}
-    fp_gt_all_img_index_dict = {}
-    fp_gt_all_img_index_list = []
-    for id in tqdm(list(set(ids.tolist()))): # 标签去重
-        split = int(math.ceil((len(gt_class_label_dict[id]) * (1-(num_fp/K)))))
-        gt_class_img_index = []
-        for img in list(gt_class_label_dict[id]):
-            gt_class_img_index.append(img_paths_dict[img])
-        if num_fp == 0:
-            tp_gt_all_img_index_dict[id] = gt_class_img_index[:]
-        else:
-            tp_gt_all_img_index_dict[id] = gt_class_img_index[:split]
-        fp_gt_all_img_index_dict[id] = gt_class_img_index[split:]
-        fp_gt_all_img_index_list.extend(gt_class_img_index[split:])
-    fp_gt_all_img_index_set = set(fp_gt_all_img_index_list)
-    # noisy lebels - split data into TP and FP sets
-
-    for id in tqdm(list(set(ids.tolist()))): # 标签去重
-        gt_class_img_index = []
-        for img in list(gt_class_label_dict[id]):
-            gt_class_img_index.append(img_paths_dict[img])
-        # noisy lebels - randomly draw FP samples with their indice
-        gt_class_img_index = tp_gt_all_img_index_dict[id]
-        fp_ids_set = fp_gt_all_img_index_set.difference(gt_class_img_index, fp_gt_all_img_index_dict[id])
-        fp_ids = random.choices(list(fp_ids_set), k=num_fp)
-        # noisy lebels - randomly draw FP samples with their indice
-        conf_class = output_m_max[gt_class_img_index] # 置信度
-        output_class = output_ori[gt_class_img_index]
-        img_paths_class = img_paths[gt_class_img_index] # 每个类别的路径
-        if image_features is not None:
-            img_features = image_features[gt_class_img_index]
-            # caculate_pairwise_distance(img_features[:K])
-            if K >= 0:
-                for img_path, img_feature, conf, logit in zip(img_paths_class[:K], img_features[:K], conf_class[:K], output_class):
-                    if '/data/' in img_path:
-                        img_path = './data/' + img_path.split('/data/')[1]
-                    predict_label_dict[img_path] = [id, img_feature, conf, logit]
+        predict_label_dict = {}
+        rng = np.random.default_rng(seed=random_seed)
+        acc_rate_dict = {}
+        from tqdm import tqdm
+        # noisy lebels - split data into TP and FP sets
+        tp_gt_all_img_index_dict = {}
+        fp_gt_all_img_index_dict = {}
+        fp_gt_all_img_index_list = []
+        for id in tqdm(list(set(ids))): # 标签去重
+            split = int(math.ceil((len(gt_class_label_dict[id]) * (1-(num_fp/K)))))
+            gt_class_img_index = []
+            for img in list(gt_class_label_dict[id]):
+                gt_class_img_index.append(img_paths_dict[img])
+            if num_fp == 0:
+                tp_gt_all_img_index_dict[id] = gt_class_img_index[:]
             else:
-                for img_path, img_feature, conf, logit in zip(img_paths_class, img_features, conf_class, output_class):
-                    if '/data/' in img_path:
-                        img_path = './data/' + img_path.split('/data/')[1]
-                    predict_label_dict[img_path] = [id, img_feature, conf, logit]
-        else:
+                tp_gt_all_img_index_dict[id] = gt_class_img_index[:split]
+            fp_gt_all_img_index_dict[id] = gt_class_img_index[split:]
+            fp_gt_all_img_index_list.extend(gt_class_img_index[split:])
+        fp_gt_all_img_index_set = set(fp_gt_all_img_index_list)
+        # noisy lebels - split data into TP and FP sets
+
+        for id in tqdm(list(set(ids))): # 标签去重
+            gt_class_img_index = []
+            for img in list(gt_class_label_dict[id]):
+                gt_class_img_index.append(img_paths_dict[img])
+            # noisy lebels - randomly draw FP samples with their indice
+            gt_class_img_index = tp_gt_all_img_index_dict[id]
+            fp_ids_set = fp_gt_all_img_index_set.difference(gt_class_img_index, fp_gt_all_img_index_dict[id])
+            fp_ids = random.choices(list(fp_ids_set), k=num_fp)
+            # noisy lebels - randomly draw FP samples with their indice
+            img_paths_class = img_paths[gt_class_img_index] # 每个类别的路径
             if K >= 0:
                 if len(img_paths_class) < K:
                     is_replace=True
@@ -226,41 +195,35 @@ def select_top_k_similarity_per_class_with_noisy_label(outputs, img_paths, K=1, 
                     is_replace=False
                 K_array = rng.choice(len(img_paths_class), size=K, replace=is_replace)
                 img_paths_class = img_paths_class[K_array]
-                conf_class = conf_class[K_array]
-                output_class = output_class[K_array]
                 # noisy lebels - dilute with FP samples
                 for i in range(num_fp):
                     img_paths_class[i] = img_paths[fp_ids][i]
-                    conf_class[i] = output_m_max[fp_ids][i]
-                    output_class[i] = output_ori[fp_ids][i]
                 # noisy lebels - - dilute with FP samples
                 print('---',id)
                 print(img_paths_class)
 
                 total = 0
                 correct = 0
-                for img_path, conf, logit in zip(img_paths_class, conf_class, output_class):
+                for img_path in (img_paths_class):
                     if '/data/' in img_path:
                         img_path = './data/' + img_path.split('/data/')[1]
                     predict_label_dict[img_path] = id
-                    predict_conf_dict[img_path] = conf
-                    predict_logit_dict[img_path] = logit
-
                     if gt_label_dict[img_path] == predict_label_dict[img_path]:
                         correct += 1
                     total += 1
                     acc_rate_dict[id] = 100.0*(correct/total)
             else:
-                for img_path, conf, logit in zip(img_paths_class, conf_class, output_class):
+                for img_path in (img_paths_class):
                     if '/data/' in img_path:
                         img_path = './data/' + img_path.split('/data/')[1]
                     predict_label_dict[img_path] = id
-                    predict_conf_dict[img_path] = conf
-                    predict_logit_dict[img_path] = logit
-    for class_id in acc_rate_dict:
-        print('* class: {}, Acc Rate {:.2f}%'.format(class_id, acc_rate_dict[class_id]))
-    print('* average: {:.2f}%'.format(sum(acc_rate_dict.values())/len(acc_rate_dict)))
-    return predict_label_dict, predict_conf_dict
+        for class_id in acc_rate_dict:
+            print('* class: {}, Acc Rate {:.2f}%'.format(class_id, acc_rate_dict[class_id]))
+        print('* average: {:.2f}%'.format(sum(acc_rate_dict.values())/len(acc_rate_dict)))
+    else:
+        print('GT dict is missing')
+        pdb.set_trace()
+    return predict_label_dict
 
 
 def select_by_conf(outputs, img_paths, K=1, conf_threshold=None, is_softmax=True):

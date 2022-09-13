@@ -139,10 +139,10 @@ def main(args):
             trainer.load_model_by_id(args.model_dir, epoch=args.load_epoch, model_id=i)
         trainer_list.append(trainer)
 
-        predict_label_dict, predict_conf_dict = trainer.load_from_exist_file(file_path='./analyze_results', 
+        predict_label_dict = trainer.load_from_exist_file(file_path='./analyze_results', 
         model_names=cfg.MODEL.PSEUDO_LABEL_MODELS)
 
-        trainer.dm.update_ssdateloader(predict_label_dict, predict_conf_dict)
+        trainer.dm.update_ssdateloader(predict_label_dict)
         trainer.train_loader_sstrain = trainer.dm.train_loader_sstrain
         trainer.sstrain_with_id(model_id=i)
         # trainer.linear_probe()

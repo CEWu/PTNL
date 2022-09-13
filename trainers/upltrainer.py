@@ -607,11 +607,12 @@ class UPLTrainer(TrainerX):
             sstrain_img_paths = np.array(items)[:,0]
 
         logits /= len(model_names)
-        predict_label_dict, predict_conf_dict = select_top_k_similarity_per_class_with_noisy_label(logits, sstrain_img_paths,
-                                                                                    K=self.cfg.DATASET.NUM_SHOTS, is_softmax=False,
-                                                                                    random_seed=self.cfg.SEED, gt_label_dict=self.gt_label_dict,
-                                                                                    num_fp=self.cfg.TRAINER.UPLTrainer.NUM_FP)
-        return predict_label_dict, predict_conf_dict
+        predict_label_dict = select_top_k_similarity_per_class_with_noisy_label(img_paths=sstrain_img_paths,
+                                                                                K=self.cfg.DATASET.NUM_SHOTS,
+                                                                                random_seed=self.cfg.SEED, 
+                                                                                gt_label_dict=self.gt_label_dict,
+                                                                                num_fp=self.cfg.TRAINER.UPLTrainer.NUM_FP)
+        return predict_label_dict 
 
     @torch.no_grad()
     def zero_shot_predict(self, trainer_list=None):
