@@ -128,7 +128,7 @@ bash upl_test_existing_logits.sh sscaltech101 rn50_ep50 end 16 16 False True 2
 # Citation
 If you find our work beneficial for your research, please consider citing:
 ```
-@inproceedings{hanoonavificlip,
+@inproceedings{wu2023ptnl,
     title={Why Is Prompt Tuning for Vision-Language Models Robust to Noisy Labels?},
     author={Cheng-En Wu, Yu Tian, Haichao Yu, Heng Wang, Pedro Morgado, Yu Hen Hu, Linjie Yang},
     booktitle={ICCV},
