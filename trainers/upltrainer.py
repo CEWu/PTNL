@@ -35,6 +35,7 @@ from .utils import (select_top_k_similarity_per_class, caculate_noise_rate, save
 select_top_k_similarity, select_top_by_value, caculate_noise_rate_analyze, select_top_k_similarity_per_class_with_noisy_label)
 
 _tokenizer = _Tokenizer()
+from trainers.loss import GeneralizedCrossEntropy
 
 
 CUSTOM_TEMPLATES = {
@@ -286,6 +287,7 @@ class CustomCLIP(nn.Module):
 class UPLTrainer(TrainerX):
     def __init__(self, cfg):
         super().__init__(cfg)
+        self.GCE_loss = GeneralizedCrossEntropy(q=0.5)
         self.gt_label_dict = self.get_gt_label(cfg)
     def check_cfg(self, cfg):
         assert cfg.TRAINER.UPLTrainer.PREC in ["fp16", "fp32", "amp"]
@@ -334,6 +336,11 @@ class UPLTrainer(TrainerX):
                 "SSUCF101":"ucf101",
                 "SSOxfordFlowers":"oxford_flowers",
                 "SSStanfordCars":"stanford_cars",
+                "SSFGVCAircraft":"fgvc_aircraft",
+                "SSDescribableTextures":"dtd",
+                "SSEuroSAT":"eurosat",
+                "SSFood101":"food-101",
+                "SSSUN397":"sun397"          
             }
             dataset_dir = dataset_map[self.cfg.DATASET.NAME]
             root = os.path.abspath(os.path.expanduser(cfg.DATASET.ROOT))
@@ -376,7 +383,7 @@ class UPLTrainer(TrainerX):
             self.scaler.update()
         else:
             output, image_features, text_features = self.model(image)
-            # loss = F.cross_entropy(output, label, self.class_weights)
+            # loss = self.GCE_loss(output, label)
             loss = F.cross_entropy(output, label)
             self.model_backward_and_update(loss)
 
@@ -516,12 +523,11 @@ class UPLTrainer(TrainerX):
         for batch_idx, batch in enumerate(data_loader):
             input, label = self.parse_batch_test(batch)
             if trainer_list is None or len(trainer_list)==1:
-                # 如果不是ensemble的测试
                 output, image_features, text_features = self.model_inference(input)
                 image_features_all.append(image_features)
                 text_features_all.append(text_features)
             else:
-                # ensemble的测试
+                # ensemble
                 outputs = [t.model_inference(input)[0] for t in trainer_list]
                 output = sum(outputs) / len(outputs)
             self.evaluator.process(output, label, self.per_image_txt_writer, self.per_class_txt_writer)
@@ -565,10 +571,9 @@ class UPLTrainer(TrainerX):
         for batch_idx, batch in tqdm(enumerate(data_loader)):
             input, label, impath = self.parse_batch_test_with_impath(batch)
             if trainer_list is None or len(trainer_list)==1:
-                # 如果不是ensemble的测试
                 output, image_features, text_features = self.model.zero_shot_forward(input, self.device)
             else:
-                # ensemble的测试
+                # ensemble
                 outputs = [t.model.zero_shot_forward(input, self.device)[0] for t in trainer_list]
                 output = sum(outputs) / len(outputs)
             outputs.append(output)
@@ -635,10 +640,9 @@ class UPLTrainer(TrainerX):
         for batch_idx, batch in tqdm(enumerate(data_loader)):
             input, label, impath = self.parse_batch_test_with_impath(batch)
             if trainer_list is None or len(trainer_list)==1:
-                # 如果不是ensemble的测试
                 output, image_features, text_features = self.model.zero_shot_forward(input, self.device)
             else:
-                # ensemble的测试
+                # ensemble
                 outputs = [t.model.zero_shot_forward(input, self.device)[0] for t in trainer_list]
                 output = sum(outputs) / len(outputs)
             outputs.append(output)
@@ -649,10 +653,8 @@ class UPLTrainer(TrainerX):
         img_paths = np.concatenate(img_paths, axis=0)
 
 
-        # 尽力维持类别平衡
         if self.cfg.DATASET.CLASS_EQULE is True:
             if self.cfg.DATASET.CONF_THRESHOLD > 0:
-                # 选择置信度大于一定值 & 选择
                 predict_label_dict_1, predict_conf_dict_1 = select_top_k_similarity_per_class(outputs, img_paths, K=self.cfg.DATASET.NUM_SHOTS)
                 predict_label_dict_2, predict_conf_dict_2 = select_top_by_value(outputs, img_paths, conf_threshold=self.cfg.DATASET.CONF_THRESHOLD)
 
@@ -725,10 +727,9 @@ class UPLTrainer(TrainerX):
         for batch_idx, batch in enumerate(data_loader):
             input, label, impath = self.parse_batch_test_with_impath(batch)
             if trainer_list is None or len(trainer_list)==1:
-                # 如果不是ensemble的测试
                 output, image_features, text_features = self.model.zero_shot_forward(input, self.device)
             else:
-                # ensemble的测试
+                # ensemble
                 outputs = [t.model.zero_shot_forward(input, self.device)[0] for t in trainer_list]
                 output = sum(outputs) / len(outputs)
             self.evaluator.process(output, label, self.per_image_txt_writer, self.per_class_txt_writer)

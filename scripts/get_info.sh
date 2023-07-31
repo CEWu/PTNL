@@ -12,11 +12,12 @@ CTP=$3  # class token position (end or middle)
 NCTX=$4  # number of context tokens
 SHOTS=$5  # number of shots (1, 2, 4, 8, 16)
 CSC=$6  # class-specific context (False or True)
+TAG=$7 # note
 
 
 for SEED in 1
 do
-    DIR=./output/${DATASET}/${TRAINER}/${CFG}_${SHOTS}shots_random_init/nctx${NCTX}_csc${CSC}_ctp${CTP}/seed${SEED}
+    DIR=./output/${DATASET}/${TRAINER}/${CFG}_${SHOTS}shots_random_init/nctx${NCTX}_csc${CSC}_ctp${CTP}${TAG}/seed${SEED}
 
     echo "Run this job and save the output to ${DIR}"
     python get_info.py \
@@ -26,6 +27,7 @@ do
     --dataset-config-file configs/datasets/${DATASET}.yaml \
     --config-file configs/trainers/${TRAINER}/${CFG}.yaml \
     --output-dir ${DIR} \
+    --tag ${TAG} \
     TRAINER.UPLTrainer.N_CTX ${NCTX} \
     TRAINER.UPLTrainer.CSC ${CSC} \
     TRAINER.UPLTrainer.CLASS_TOKEN_POSITION ${CTP} \

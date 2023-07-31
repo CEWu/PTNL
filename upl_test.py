@@ -146,11 +146,11 @@ def main(args):
 
         prob_end = []
         results_dict = {}
-        for SHOTS in [16]:
+        for SHOTS in [4]:
             print('SHOTS:', SHOTS, '\n\n\n\n\n')
-            for seed in range(1, 17):
+            for seed in range(1, 5):
                 try:
-                    prob = torch.load('./analysis_results_test/{}/fp{}/50_{}_{}_random_initend/test_logits.pt'.format(cfg.DATASET.NAME, args.num_fp, seed, SHOTS))
+                    prob = torch.load('./analysis_results_test/{}/{}/fp{}/50_{}_{}_random_initend/test_logits.pt'.format(args.tag, cfg.DATASET.NAME, args.num_fp, seed, SHOTS))
                     prob_end.append(prob)
                 except:
                     print('loss')
@@ -159,6 +159,9 @@ def main(args):
             prob_test = sum(prob_end) / len(prob_end)
             results_end = trainer_list[0].test_with_existing_logits(prob_test)
 
+            save_path = './analysis_results_test/{}/{}/fp{}/'.format(args.tag, cfg.DATASET.NAME, args.num_fp)
+            with open(os.path.join(save_path, 'ensemble_accuracy_result.txt'), "w") as f:
+                print('ensemble: {:.2f}'.format((results_end['accuracy'])), file=f)
             print('ensemble: {:.2f}'.format((results_end['accuracy'])))
             results_dict[len(prob_end)] = results_end['accuracy']
 
@@ -244,6 +247,12 @@ if __name__ == '__main__':
         default=None,
         nargs=argparse.REMAINDER,
         help='modify config options using the command-line'
+    )
+    parser.add_argument(
+        '--tag',
+        type=str,
+        default='',
+        help='tag for method'
     )
     args = parser.parse_args()
     main(args)

@@ -145,7 +145,6 @@ def main(args):
         trainer.dm.update_ssdateloader(predict_label_dict)
         trainer.train_loader_sstrain = trainer.dm.train_loader_sstrain
         trainer.sstrain_with_id(model_id=i)
-        # trainer.linear_probe()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -14,6 +14,7 @@ SHOTS=$5  # number of shots (1, 2, 4, 8, 16)
 CSC=$6  # class-specific context (False or True)
 CLASS_EQULE=$7  # CLASS_EQULE True of False
 FP=$8 # number of false positive training samples per class
+TAG=$9 # note
 
 
 DIR=./output/${DATASET}/${TRAINER}/${CFG}_${SHOTS}shots_EQULE_${CLASS_EQULE}_CONF_THRESHOLD_${CONF_THRESHOLD}_RN50_temp/nctx${NCTX}_csc${CSC}_fp${FP}/seed${SEED}
@@ -26,11 +27,9 @@ python upl_test.py \
 --config-file configs/trainers/${TRAINER}/${CFG}.yaml \
 --output-dir ${DIR} \
 --num-fp ${FP} \
+--tag ${TAG} \
 TRAINER.UPLTrainer.N_CTX ${NCTX} \
 TRAINER.UPLTrainer.CSC ${CSC} \
 TRAINER.UPLTrainer.CLASS_TOKEN_POSITION ${CTP} \
 DATASET.NUM_SHOTS ${SHOTS} \
 DATASET.CLASS_EQULE ${CLASS_EQULE}
-
-
-

@@ -1,86 +1,89 @@
 
-# Prompt Tuning with Noisy Labels for Vision-Language Models
+# Why Is Prompt Tuning for Vision-Language Models Robust to Noisy Labels? [ICCV 2023]
+
+
+
+> [**Why Is Prompt Tuning for Vision-Language Models Robust to Noisy Labels?**](https://arxiv.org/abs/2307.11978)<br>
+> Cheng-En Wu, Yu Tian, Haichao Yu, Heng Wang, Pedro Morgado, Yu Hen Hu, Linjie Yang
+
+[![paper](https://img.shields.io/badge/arXiv-Paper-<COLOR>.svg)](https://arxiv.org/abs/2307.11978)
 
 
 ## Introduction
 
-This repo is the official implementation of **Prompt Tuning Noisy with Labels for Vision-Language Models**.
+This repo is the official implementation of **Why Is Prompt Tuning for Vision-Language Models Robust to Noisy Labels?**.
 
 
 ## Install
 
-The code is built on the [CoOp](https://github.com/KaiyangZhou/CoOp) and [Dassl](https://github.com/KaiyangZhou/Dassl.pytorch) with commit `ac6e44194b2f90e325f477aadd6d9bc3a92ce255`, so you need to install the dassl environment first. You can follow the [instructions](https://github.com/KaiyangZhou/Dassl.pytorch#installation) to install *dassl* as well as *PyTorch*. After that, run `pip install -r requirements.txt` under `PTNL/` to install a few more packages required by [CLIP](https://github.com/openai/CLIP).
-
-**We also prepare all installation commands for you**:
+**Setup conda environment (recommended).**:
 
 ```bash
-############ install conda env ############
+############ Conda Environment Installation ############
 
-# Download miniconda script
+# Fetch the miniconda script
 export HOME=$PWD
 wget -q https://repo.anaconda.com/miniconda/Miniconda3-py37_4.12.0-Linux-x86_64.sh -O miniconda.sh
 sh miniconda.sh -b -p $HOME/miniconda3
 rm miniconda.sh
 export PATH=$HOME/miniconda3/bin:$PATH
 
-# Set up conda
+# Initialize conda
 source $HOME/miniconda3/etc/profile.d/conda.sh
 hash -r
 conda config --set always_yes yes --set changeps1 yes
 conda activate dassl
 
-############ install Dassl ############
+############ Dassl Installation ############
 
-# Clone this repo
+# Clone the Dassl repository
 git clone https://github.com/KaiyangZhou/Dassl.pytorch.git
 cd Dassl.pytorch/
 git reset --hard ac6e44194b2f90e325f477aadd6d9bc3a92ce255
 
-# Create a conda environment
+# Establish a new conda environment
 conda create -n dassl python=3.7
 
-# Activate the environment
+# Activate the new environment
 conda activate dassl
 
-# Install dependencies
+# Install the required dependencies
 pip install -r requirements.txt
 
-# Install torch (version >= 1.11.0) and torchvision
+# Install PyTorch (version 1.11.0 or above) and torchvision
 conda install pytorch==1.11.0 torchvision==0.12.0 cudatoolkit=11.3 -c pytorch
 
-# Install this library (no need to re-build if the source code is modified)
+# Set up the Dassl library (No need to rebuild even if the source code changes)
 python setup.py develop
 
-############ install PTNL ############
+############ PTNL Installation ############
 
-# Enter the directory at the same level as Dassl
+# Navigate back to the parent directory
 cd ..
 
-# Clone this repo
-git clone https://github.com/tonyhuang2022/PTNL.git
+# Clone the PTNL repository
+git clone https://github.com/CEWu/PTNL
 cd PTNL/
 
-# Install CLIP dependencies
+# Install necessary packages for CLIP
 pip install -r requirements.txt
 
-######## attention ########
-# We have two soft links, and you can redirect them!
-# The `data` is linked to the datasets, and the `temp_analyze_results_miltiple` is linked to the `info`.
-# We strongly recommend that you create these two paths on the disk which has enough space, and then use
+######## Note ########
+# Two symbolic links, `data` and `temp_analyze_results_miltiple`, exist in the repository. It is recommended that these be pointed to locations with sufficient storage capacity.
 
-rm data temp_analyze_results_miltiple # remove the existing file
+rm data temp_analyze_results_miltiple # remove the existing links
 ln -s ${your_data_path} ./data
 ln -s ${your_temp_analyze_results_miltiple_path} ./temp_analyze_results_miltiple
 
-# Finished
+# Installation complete
+
 ```
 
 
 ## Datasets
 
-After that, you can follow the [CoOp Datasets Instructions](https://github.com/KaiyangZhou/CoOp/blob/main/DATASETS.md) to prepare the datasets.
+Please follow the instructions at [CoOp Datasets Instructions](https://github.com/KaiyangZhou/CoOp/blob/main/DATASETS.md)  to prepare all datasets.
 
-Then, you can run the code ~
 
 ## Training
 
@@ -121,6 +124,17 @@ bash upl_test_existing_logits.sh sscaltech101 rn50_ep50 end 16 16 False True 2
 * class-specific context (False or True)
 * CLASS_EQULE True of False
 * number of false positive training samples per class
+
+# Citation
+If you find our work beneficial for your research, please consider citing:
+```
+@inproceedings{hanoonavificlip,
+    title={Why Is Prompt Tuning for Vision-Language Models Robust to Noisy Labels?},
+    author={Cheng-En Wu, Yu Tian, Haichao Yu, Heng Wang, Pedro Morgado, Yu Hen Hu, Linjie Yang},
+    booktitle={ICCV},
+    year={2023}
+}
+```
 
 ## Acknowlegment
 

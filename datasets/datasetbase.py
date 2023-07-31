@@ -151,7 +151,6 @@ class UPLDatasetBase(DatasetBase):
             train = _convert_no_label(split["train"])
         return train
 
-    # dtd会报错 需要单独处理，它里面有处理的函数，需要copy过来，详见原版的database
 
     def add_label(self, predict_label_dict, dataset_name):
         """add label when training for self-supervised learning

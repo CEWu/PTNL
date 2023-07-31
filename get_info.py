@@ -89,6 +89,7 @@ def extend_cfg(cfg):
     cfg.TRAINER.UPLTrainer.CTX_INIT = ""  # initialization words
     cfg.TRAINER.UPLTrainer.PREC = "fp16"  # fp16, fp32, amp
     cfg.TRAINER.UPLTrainer.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
+    cfg.TRAINER.UPLTrainer.TAG = args.tag  # #false positive training samples per class
 
 
 def setup_cfg(args):
@@ -206,6 +207,12 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--no-train', action='store_true', help='do not call trainer.train()'
+    )
+    parser.add_argument(
+        '--tag',
+        type=str,
+        default='',
+        help='tag for method'
     )
     parser.add_argument(
         'opts',

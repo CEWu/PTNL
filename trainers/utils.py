@@ -6,9 +6,9 @@ import json
 import torch
 from sklearn.metrics import precision_recall_curve
 from collections import OrderedDict
-import pdb
 import random
 import time
+import pdb
 import math
 
 def plotLogitsMap(outputs, label, save_path, fig_title, max_lines=1000):
@@ -20,11 +20,11 @@ def plotLogitsMap(outputs, label, save_path, fig_title, max_lines=1000):
     pred = outputs.max(1)[1]
     matches = pred.eq(label).float()
     output_m = np.sort(output_m)
-    output_m = output_m[:,::-1] # 从大到小排序
-    output_m = output_m[:,:5] # 取前五个
+    output_m = output_m[:,::-1]
+    output_m = output_m[:,:5]
     output_m_index = output_m[:,0].argsort()
     output_m = output_m[output_m_index]
-    output_m = output_m[::-1,:] # 按第一列从大到小排序
+    output_m = output_m[::-1,:]
     matches = matches[output_m_index]
     matches = torch.flip(matches, dims=[0])
     matches = matches.cpu().detach().numpy()
@@ -64,19 +64,15 @@ def plotPRMap(outputs, label, save_path, fig_title):
     pred = outputs.max(1)[1]
     matches = pred.eq(label).float()
     output_m = np.sort(output_m)
-    output_m = output_m[:,::-1] # 从大到小排序
-    output_m = output_m[:,:5] # 取前五个
+    output_m = output_m[:,::-1]
+    output_m = output_m[:,:5]
     output_m_index = output_m[:,0].argsort()
     output_m = output_m[output_m_index]
-    output_m = output_m[::-1,:] # 按第一列从大到小排序
+    output_m = output_m[::-1,:]
     matches = matches[output_m_index]
     matches = torch.flip(matches, dims=[0])
     matches = matches.cpu().detach().numpy()
-    # print(output_m[:,0].shape, matches.shape)
     precision, recall, thresholds = precision_recall_curve(matches, output_m[:,0])
-    # print(precision)
-    # print(recall)
-    # print(thresholds, len(thresholds))
     plt.plot(recall, precision)
 
     step = 0
@@ -102,7 +98,7 @@ def select_top_k_similarity_per_class(outputs, img_paths, K=1, image_features=No
     img_paths = img_paths[output_m_max_id]
     output_m_max = output_m_max[output_m_max_id]
     output_ori = output_ori[output_m_max_id]
-    ids = (-output_m).argsort()[:, 0] # 获得每行的类别标签
+    ids = (-output_m).argsort()[:, 0]
 
     if image_features is not None:
         image_features = image_features.cpu().detach()
@@ -111,11 +107,11 @@ def select_top_k_similarity_per_class(outputs, img_paths, K=1, image_features=No
     predict_label_dict = {}
     predict_conf_dict = {}
     from tqdm import tqdm
-    for id in tqdm(list(set(ids.tolist()))): # 标签去重
+    for id in tqdm(list(set(ids.tolist()))):
         index = np.where(ids==id)
-        conf_class = output_m_max[index] # 置信度
+        conf_class = output_m_max[index]
         output_class = output_ori[index]
-        img_paths_class = img_paths[index] # 每个类别的路径
+        img_paths_class = img_paths[index]
 
         if image_features is not None:
             img_features = image_features[index]
@@ -153,9 +149,8 @@ def select_top_k_similarity_per_class_with_noisy_label(img_paths, K=1, random_se
             gt_class_label_dict[indx] = np.array([])
         for ip, gt_label in gt_label_dict.items():
             gt_class_label_dict[gt_label] = np.append(gt_class_label_dict[gt_label], np.array(ip))
-            # np.array(gt_class_label_dict[gt_label.item()], (np.array(ip)))
         img_paths_dict = {k: v for v, k in enumerate(img_paths)}
-
+        fp_ids_chosen = set()
         predict_label_dict = {}
         rng = np.random.default_rng(seed=random_seed)
         acc_rate_dict = {}
@@ -164,30 +159,33 @@ def select_top_k_similarity_per_class_with_noisy_label(img_paths, K=1, random_se
         tp_gt_all_img_index_dict = {}
         fp_gt_all_img_index_dict = {}
         fp_gt_all_img_index_list = []
-        for id in tqdm(list(set(ids))): # 标签去重
-            split = int(math.ceil((len(gt_class_label_dict[id]) * (1-(num_fp/K)))))
+        for id in tqdm(list(set(ids))):
+            # noisy lebels - fix candidates for 16 shot samples
+            split = int(math.ceil((len(gt_class_label_dict[id]) * (0.5))))
+            # noisy lebels - fix candidates for 16 shot samples
             gt_class_img_index = []
             for img in list(gt_class_label_dict[id]):
                 gt_class_img_index.append(img_paths_dict[img])
-            if num_fp == 0:
-                tp_gt_all_img_index_dict[id] = gt_class_img_index[:]
-            else:
-                tp_gt_all_img_index_dict[id] = gt_class_img_index[:split]
+            # if num_fp == 0:
+            #     tp_gt_all_img_index_dict[id] = gt_class_img_index[:]
+            # else:
+            tp_gt_all_img_index_dict[id] = gt_class_img_index[:split]
             fp_gt_all_img_index_dict[id] = gt_class_img_index[split:]
             fp_gt_all_img_index_list.extend(gt_class_img_index[split:])
         fp_gt_all_img_index_set = set(fp_gt_all_img_index_list)
         # noisy lebels - split data into TP and FP sets
 
-        for id in tqdm(list(set(ids))): # 标签去重
+        for id in tqdm(list(set(ids))):
             gt_class_img_index = []
             for img in list(gt_class_label_dict[id]):
                 gt_class_img_index.append(img_paths_dict[img])
             # noisy lebels - randomly draw FP samples with their indice
             gt_class_img_index = tp_gt_all_img_index_dict[id]
-            fp_ids_set = fp_gt_all_img_index_set.difference(gt_class_img_index, fp_gt_all_img_index_dict[id])
+            fp_ids_set = fp_gt_all_img_index_set.difference(gt_class_img_index, fp_gt_all_img_index_dict[id], fp_ids_chosen)
             fp_ids = random.choices(list(fp_ids_set), k=num_fp)
+            fp_ids_chosen.update(fp_ids)
             # noisy lebels - randomly draw FP samples with their indice
-            img_paths_class = img_paths[gt_class_img_index] # 每个类别的路径
+            img_paths_class = img_paths[gt_class_img_index]
             if K >= 0:
                 if len(img_paths_class) < K:
                     is_replace=True
@@ -201,7 +199,6 @@ def select_top_k_similarity_per_class_with_noisy_label(img_paths, K=1, random_se
                 # noisy lebels - - dilute with FP samples
                 print('---',id)
                 print(img_paths_class)
-
                 total = 0
                 correct = 0
                 for img_path in (img_paths_class):
@@ -238,17 +235,17 @@ def select_by_conf(outputs, img_paths, K=1, conf_threshold=None, is_softmax=True
     img_paths = img_paths[output_m_max_id]
     output_m_max = output_m_max[output_m_max_id]
     output_ori = output_ori[output_m_max_id]
-    ids = (-output_m).argsort()[:, 0] # 获得每行的类别标签
+    ids = (-output_m).argsort()[:, 0]
 
 
     predict_label_dict = {}
     predict_conf_dict = {}
     from tqdm import tqdm
-    for id in tqdm(list(set(ids.tolist()))): # 标签去重
+    for id in tqdm(list(set(ids.tolist()))):
         index = np.where(ids==id)
-        conf_class = output_m_max[index] # 置信度
+        conf_class = output_m_max[index]
         output_class = output_ori[index]
-        img_paths_class = img_paths[index] # 每个类别的路径
+        img_paths_class = img_paths[index]
 
         for img_path, conf in zip(img_paths_class, conf_class):
             if conf > conf_threshold:
@@ -257,7 +254,6 @@ def select_by_conf(outputs, img_paths, K=1, conf_threshold=None, is_softmax=True
     return predict_label_dict, predict_conf_dict
 
 def select_top_k_similarity(outputs, img_paths, K=1, image_features=None, repeat=False):
-    # print(outputs.shape)
     outputs = torch.nn.Softmax(dim=1)(outputs)
     output_m = outputs.cpu().detach().numpy()
     output_ori = outputs.cpu().detach()
@@ -265,10 +261,9 @@ def select_top_k_similarity(outputs, img_paths, K=1, image_features=None, repeat
     output_m_max_id = np.argsort(-output_m_max)
     output_m = output_m[output_m_max_id]
     img_paths = img_paths[output_m_max_id]
-    # output_m_max = output_m_max[output_m_max_id]
     output_ori = output_ori[output_m_max_id]
-    conf_class = output_m_max[output_m_max_id] # 置信度
-    ids = (-output_m).argsort()[:, 0] # 获得每行的类别标签
+    conf_class = output_m_max[output_m_max_id]
+    ids = (-output_m).argsort()[:, 0]
 
     if image_features is not None:
         image_features = image_features.cpu().detach()
@@ -304,10 +299,9 @@ def select_top_by_value(outputs, img_paths, conf_threshold=0.95, image_features=
     output_m_max_id = np.argsort(-output_m_max)
     output_m = output_m[output_m_max_id]
     img_paths = img_paths[output_m_max_id]
-    # output_m_max = output_m_max[output_m_max_id]
     output_ori = output_ori[output_m_max_id]
-    conf_class = output_m_max[output_m_max_id] # 置信度
-    ids = (-output_m).argsort()[:, 0] # 获得每行的类别标签
+    conf_class = output_m_max[output_m_max_id]
+    ids = (-output_m).argsort()[:, 0]
 
     if image_features is not None:
         image_features = image_features.cpu().detach()
@@ -337,8 +331,6 @@ def caculate_noise_rate(predict_label_dict, train_loader, trainer, sample_level=
                 ip = './data/' + ip.split('/data/')[1]
             gt_label_dict[ip] = l
 
-    # print('gt_label_dict', len(gt_label_dict))
-    # print('gt_label_dict', gt_label_dict)
     total = 0
     correct = 0
     for item in predict_label_dict:
@@ -368,7 +360,7 @@ def caculate_noise_rate_analyze(predict_label_dict, train_loader, trainer, sampl
     print('Acc Rate {:.4f}'.format(correct/total))
 
 
-def save_outputs(train_loader, trainer, predict_label_dict, dataset_name, text_features, backbone_name=None):
+def save_outputs(train_loader, trainer, predict_label_dict, dataset_name, text_features, backbone_name=None, tag='', seed =''):
     backbone_name = backbone_name.replace('/', '-')
     gt_pred_label_dict = {}
     for batch_idx, batch in enumerate(train_loader):
@@ -417,20 +409,20 @@ def save_outputs(train_loader, trainer, predict_label_dict, dataset_name, text_f
     v_features = torch.vstack(v_features)
     logits_tensor = torch.vstack(logits_list)
 
-    if not os.path.exists('./analyze_results/{}/'.format(backbone_name)):
-        os.makedirs('./analyze_results/{}/'.format(backbone_name))
+    if not os.path.exists('./analyze_results/{}{}/'.format(backbone_name, tag)):
+        os.makedirs('./analyze_results/{}{}/'.format(backbone_name, tag))
 
-    torch.save(v_features, './analyze_results/{}/{}_v_feature.pt'.format(backbone_name, dataset_name))
-    torch.save(text_features, './analyze_results/{}/{}_l_feature.pt'.format(backbone_name, dataset_name))
-    torch.save(logits_tensor, './analyze_results/{}/{}_logits.pt'.format(backbone_name, dataset_name))
+    torch.save(v_features, './analyze_results/{}{}/{}_v_feature.pt'.format(backbone_name, tag, dataset_name, seed))
+    torch.save(text_features, './analyze_results/{}{}/{}_l_feature{}.pt'.format(backbone_name, tag, dataset_name, seed))
+    torch.save(logits_tensor, './analyze_results/{}{}/{}_logits{}.pt'.format(backbone_name, tag, dataset_name, seed))
 
 
-    with open("./analyze_results/{}/{}.json".format(backbone_name, dataset_name), "w") as outfile:
+    with open("./analyze_results/{}{}/{}{}.json".format(backbone_name, tag, dataset_name, seed), "w") as outfile:
         json.dump(v_distance_dict, outfile)
 
 
+
 def select_top_k_similarity_per_class_with_high_conf(outputs, img_paths, K=1, image_features=None, repeat=False):
-    # print(outputs.shape)
     outputs = torch.nn.Softmax(dim=1)(outputs)
     output_m = outputs.cpu().detach().numpy()
     output_ori = outputs.cpu().detach()
@@ -440,16 +432,14 @@ def select_top_k_similarity_per_class_with_high_conf(outputs, img_paths, K=1, im
     img_paths = img_paths[output_m_max_id]
     output_m_max = output_m_max[output_m_max_id]
     output_ori = output_ori[output_m_max_id]
-    ids = (-output_m).argsort()[:, 0] # 获得每行的类别标签
+    ids = (-output_m).argsort()[:, 0]
 
 
-    # 计算类别平均置信度
     class_avg_conf = {}
-    for id in list(set(ids.tolist())): # 标签去重
+    for id in list(set(ids.tolist())):
         index = np.where(ids==id)
-        conf_class = output_m_max[index] # 置信度
+        conf_class = output_m_max[index]
         class_avg_conf[id] = conf_class.sum() / conf_class.size
-        # print(class_avg_conf[id])
 
     selected_ids = sorted(class_avg_conf.items(), key = lambda kv:(kv[1], kv[0]), reverse=True)[:int(0.8*len(class_avg_conf))]
     remain_ids = sorted(class_avg_conf.items(), key = lambda kv:(kv[1], kv[0]), reverse=True)[int(0.8*len(class_avg_conf)):]
@@ -464,14 +454,12 @@ def select_top_k_similarity_per_class_with_high_conf(outputs, img_paths, K=1, im
     predict_label_dict = {}
     predict_conf_dict = {}
 
-    # selected_ids.append(0)
 
-    for id in selected_ids: # 标签去重
+    for id in selected_ids:
         index = np.where(ids==id)
-        conf_class = output_m_max[index] # 置信度
+        conf_class = output_m_max[index]
         output_class = output_ori[index]
-        img_paths_class = img_paths[index] # 每个类别的路径
-
+        img_paths_class = img_paths[index]
         if image_features is not None:
             img_features = image_features[index]
             if K >= 0:
@@ -515,20 +503,20 @@ def select_top_k_similarity_per_class_with_low_conf(outputs, img_paths, conf_thr
     img_paths = img_paths[output_m_max_id]
     output_m_max = output_m_max[output_m_max_id]
     output_ori = output_ori[output_m_max_id]
-    ids = (-output_m).argsort()[:, 0] # 获得每行的类别标签
+    ids = (-output_m).argsort()[:, 0]
 
 
     predict_label_dict = {}
     predict_conf_dict = {}
     no_sample_ids = []
 
-    for id in remain_ids_list: # 标签去重
+    for id in remain_ids_list:
         # print(id)
         is_id_have_sample = False
         index = np.where(ids==id)
-        conf_class = output_m_max[index] # 置信度
+        conf_class = output_m_max[index]
         output_class = output_ori[index]
-        img_paths_class = img_paths[index] # 每个类别的路径
+        img_paths_class = img_paths[index]
 
         if K >= 0:
             for img_path, conf in zip(img_paths_class[:K], conf_class[:K]):
@@ -541,7 +529,6 @@ def select_top_k_similarity_per_class_with_low_conf(outputs, img_paths, conf_thr
             for img_path, conf in zip(img_paths_class, conf_class):
                 predict_label_dict[img_path] = id
                 predict_conf_dict[img_path] = conf
-        # print(is_id_have_sample)
         if is_id_have_sample is False:
             no_sample_ids.append(id)
 
@@ -549,7 +536,6 @@ def select_top_k_similarity_per_class_with_low_conf(outputs, img_paths, conf_thr
     return predict_label_dict, predict_conf_dict, no_sample_ids
 
 def select_top_k_similarity_per_class_no_smaple(outputs, img_paths, no_sample_ids, K=16):
-    # print(outputs.shape)
     outputs = torch.nn.Softmax(dim=1)(outputs)
     output_m = outputs.cpu().detach().numpy()
     output_ori = outputs.cpu().detach()
@@ -559,18 +545,18 @@ def select_top_k_similarity_per_class_no_smaple(outputs, img_paths, no_sample_id
     img_paths = img_paths[output_m_max_id]
     output_m_max = output_m_max[output_m_max_id]
     output_ori = output_ori[output_m_max_id]
-    ids = (-output_m).argsort()[:, 0] # 获得每行的类别标签
+    ids = (-output_m).argsort()[:, 0]
 
 
     predict_label_dict = {}
     predict_conf_dict = {}
 
-    for id in no_sample_ids: # 标签去重
+    for id in no_sample_ids:
         print(id)
         index = np.where(ids==id)
-        conf_class = output_m_max[index] # 置信度
+        conf_class = output_m_max[index]
         output_class = output_ori[index]
-        img_paths_class = img_paths[index] # 每个类别的路径
+        img_paths_class = img_paths[index]
 
         if K >= 0:
             for img_path, conf in zip(img_paths_class[:K], conf_class[:K]):
@@ -581,20 +567,3 @@ def select_top_k_similarity_per_class_no_smaple(outputs, img_paths, no_sample_id
                 predict_label_dict[img_path] = id
                 predict_conf_dict[img_path] = conf
     return predict_label_dict, predict_conf_dict
-
-
-def read_wordnet_classnames(classname_CLS, text_file):
-    """Return a list containing
-     class name, WordNet name,...
-    """
-    classnames_dict = OrderedDict()
-    for CLS in classname_CLS:
-        classnames_dict[CLS] = None
-    with open(text_file, "r") as f:
-        lines = f.readlines()
-        for line in lines:
-            line = line.strip().split(",")
-            classnames_dict[line[0]] = ",".join(line[0:])
-        classnames = [classnames_dict[key] for key in classnames_dict.keys()]
-    return classnames
-

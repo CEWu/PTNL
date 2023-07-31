@@ -113,7 +113,6 @@ class UPLDataManager(DataManager):
 
         try:
             if self.dataset.sstrain:
-                # 除了dataset的source是不一样的，其他跟trian都是一样的
                 train_loader_sstrain = build_data_loader(
                     cfg,
                     sampler_type="SequentialSampler",
@@ -122,7 +121,7 @@ class UPLDataManager(DataManager):
                     tfm=tfm_test,
                     is_train=False,
                     dataset_wrapper=dataset_wrapper,
-                    tag='sstrain' # 初始化的时候需要设置这个来保证所有样本的载入
+                    tag='sstrain'
                 )
                 self.train_loader_sstrain = train_loader_sstrain
 
@@ -132,7 +131,7 @@ class UPLDataManager(DataManager):
                     sampler_type="SequentialSampler",
                     data_source=self.dataset.train_x,
                     batch_size=cfg.DATALOADER.TRAIN_X.BATCH_SIZE,
-                    tfm=tfm_test, # 这个是不训练的，所以要用测试的配置，
+                    tfm=tfm_test,
                     is_train=False,
                     dataset_wrapper=dataset_wrapper,
                     tag='sstrain'
@@ -161,7 +160,7 @@ class UPLDataManager(DataManager):
             data_source=sstrain,
             batch_size=self.cfg.DATALOADER.TRAIN_X.BATCH_SIZE,
             n_domain=self.cfg.DATALOADER.TRAIN_X.N_DOMAIN,
-            n_ins=1, # 每个类别n_ins个instance
+            n_ins=1,
             tfm=self.tfm_train,
             is_train=True,
             dataset_wrapper=self.dataset_wrapper,
