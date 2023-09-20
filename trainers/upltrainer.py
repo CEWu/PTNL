@@ -383,8 +383,10 @@ class UPLTrainer(TrainerX):
             self.scaler.update()
         else:
             output, image_features, text_features = self.model(image)
-            # loss = self.GCE_loss(output, label)
-            loss = F.cross_entropy(output, label)
+            if self.cfg.TRAINER.UPLTrainer.USE_ROBUSTLOSS:
+                loss = self.GCE_loss(output, label)
+            else:
+                loss = F.cross_entropy(output, label)
             self.model_backward_and_update(loss)
 
         loss_summary = {
