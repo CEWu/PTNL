@@ -89,6 +89,7 @@ def extend_cfg(cfg, args):
     cfg.TRAINER.UPLTrainer.PREC = "fp16"  # fp16, fp32, amp
     cfg.TRAINER.UPLTrainer.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
     cfg.TRAINER.UPLTrainer.NUM_FP = args.num_fp  # #false positive training samples per class
+    cfg.TRAINER.UPLTrainer.USE_ROBUSTLOSS = args.use_robustloss  # use robust loss (GCE)
 
 
 def setup_cfg(args):
@@ -200,6 +201,9 @@ if __name__ == '__main__':
     parser.add_argument('--head', type=str, default='', help='name of head')
     parser.add_argument(
         '--eval-only', action='store_true', help='evaluation only'
+    )
+    parser.add_argument(
+        '--use-robustloss', action='store_true', help='use robust loss (GCE)'
     )
     parser.add_argument(
         '--model-dir',
