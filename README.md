@@ -87,6 +87,11 @@ Please follow the instructions at [CoOp Datasets Instructions](https://github.co
 
 ## Training
 
+### Obtain Psuodo-labels and Save Model's logits
+```
+CUDA_VISIBLE_DEVICES=0 bash get_info.sh sscaltech101 anay_rn50 end 16 -1 False
+```
+
 ### Prompt Tuning with Noisy Labels
 Training with samples with noisy (2 out of 16 shots training samples are noisy labels.)
 ```python
