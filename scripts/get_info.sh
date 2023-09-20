@@ -12,7 +12,6 @@ CTP=$3  # class token position (end or middle)
 NCTX=$4  # number of context tokens
 SHOTS=$5  # number of shots (1, 2, 4, 8, 16)
 CSC=$6  # class-specific context (False or True)
-TAG=$7 # note
 
 
 for SEED in 1
@@ -27,7 +26,6 @@ do
     --dataset-config-file configs/datasets/${DATASET}.yaml \
     --config-file configs/trainers/${TRAINER}/${CFG}.yaml \
     --output-dir ${DIR} \
-    --tag ${TAG} \
     TRAINER.UPLTrainer.N_CTX ${NCTX} \
     TRAINER.UPLTrainer.CSC ${CSC} \
     TRAINER.UPLTrainer.CLASS_TOKEN_POSITION ${CTP} \
